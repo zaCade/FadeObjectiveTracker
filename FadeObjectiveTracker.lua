@@ -10,6 +10,13 @@ function FadeObjectiveTracker_FadeIn()
 	FadeObjectiveTracker.Fading = nil;
 
 	UIFrameFadeIn(ObjectiveTrackerFrame, FadeObjectiveTrackerDB.FadeInSpeed or 1, 0, 1);
+
+	for _, childFrame in pairs({ObjectiveTrackerFrame:GetChildren()}) do
+		if childFrame.wasMouseEnabled then
+			childFrame.wasMouseEnabled = nil;
+			childFrame:EnableMouse(true);
+		end
+	end
 end
 
 function FadeObjectiveTracker_FadeOut()
@@ -19,6 +26,13 @@ function FadeObjectiveTracker_FadeOut()
 	FadeObjectiveTracker.Fading = nil;
 
 	UIFrameFadeOut(ObjectiveTrackerFrame, FadeObjectiveTrackerDB.FadeOutSpeed or 1, 1, 0);
+
+	for _, childFrame in pairs({ObjectiveTrackerFrame:GetChildren()}) do
+		if childFrame:IsMouseEnabled() then
+			childFrame.wasMouseEnabled = true;
+			childFrame:EnableMouse(false);
+		end
+	end
 end
 
 function FadeObjectiveTracker_QueueFadeIn()
