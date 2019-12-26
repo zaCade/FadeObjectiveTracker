@@ -2,7 +2,7 @@
 ## Author: zaCade
 ## Title: FadeObjectiveTracker
 ## Notes: Automatically fade out the objective tracker on boss encounters.
-## Version: 0.0.10
+## Version: @project-version@
 ## SavedVariables: FadeObjectiveTrackerDB
 ## OptionalDeps: Ace3
 ## X-Embeds: Ace3
