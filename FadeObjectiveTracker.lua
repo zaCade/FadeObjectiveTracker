@@ -1,4 +1,30 @@
-local FadeObjectiveTracker = LibStub("AceAddon-3.0"):NewAddon("FadeObjectiveTracker", "AceEvent-3.0", "AceTimer-3.0");
+local FadeObjectiveTracker = LibStub("AceAddon-3.0"):NewAddon("FadeObjectiveTracker", "AceConsole-3.0", "AceEvent-3.0", "AceTimer-3.0");
+
+------------------------------------------------------------------------------------------------------
+-- Main: Debug Functions
+------------------------------------------------------------------------------------------------------
+local function DebugPrint(message)
+	--@debug@
+	FadeObjectiveTracker:Print(message);
+	--@end-debug@
+end
+
+------------------------------------------------------------------------------------------------------
+-- Main: Helper Functions
+------------------------------------------------------------------------------------------------------
+local function GetTrackerFrame()
+	return ObjectiveTrackerFrame or QuestWatchFrame;
+end
+
+local function IsObjectiveTracker()
+	return ObjectiveTrackerFrame ~= nil or false;
+end
+
+local function IsInstancePvP()
+	local inInstance, instanceType = IsInInstance();
+
+	return inInstance and instanceType == "pvp" or instanceType == "arena";
+end
 
 ------------------------------------------------------------------------------------------------------
 -- Main: Global Functions
@@ -6,37 +32,35 @@ local FadeObjectiveTracker = LibStub("AceAddon-3.0"):NewAddon("FadeObjectiveTrac
 function FadeObjectiveTracker_FadeIn()
 	if not FadeObjectiveTracker.Faded then return end
 
+	DebugPrint("FadeObjectiveTracker_FadeIn!");
+
 	FadeObjectiveTracker.Faded = nil;
 	FadeObjectiveTracker.Fading = nil;
 
-	UIFrameFadeIn(ObjectiveTrackerFrame, FadeObjectiveTrackerDB.FadeInSpeed or 1, 0, 1);
+	UIFrameFadeIn(GetTrackerFrame(), FadeObjectiveTrackerDB.FadeInSpeed or 1, 0, 1);
 
-	for _, childFrame in pairs({ObjectiveTrackerFrame:GetChildren()}) do
-		if childFrame.wasMouseEnabled then
-			childFrame.wasMouseEnabled = nil;
-			childFrame:EnableMouse(true);
-		end
+	if IsObjectiveTracker() then
+		ObjectiveTracker_Update();
+	else
+		QuestWatch_Update();
 	end
 end
 
 function FadeObjectiveTracker_FadeOut()
 	if FadeObjectiveTracker.Faded then return end
 
+	DebugPrint("FadeObjectiveTracker_FadeOut!");
+
 	FadeObjectiveTracker.Faded = true;
 	FadeObjectiveTracker.Fading = nil;
 
-	UIFrameFadeOut(ObjectiveTrackerFrame, FadeObjectiveTrackerDB.FadeOutSpeed or 1, 1, 0);
-
-	for _, childFrame in pairs({ObjectiveTrackerFrame:GetChildren()}) do
-		if childFrame:IsMouseEnabled() then
-			childFrame.wasMouseEnabled = true;
-			childFrame:EnableMouse(false);
-		end
-	end
+	UIFrameFadeOut(GetTrackerFrame(), FadeObjectiveTrackerDB.FadeOutSpeed or 1, 1, 0);
 end
 
 function FadeObjectiveTracker_QueueFadeIn()
 	if FadeObjectiveTracker.Fading or not FadeObjectiveTracker.Faded then return end
+
+	DebugPrint("FadeObjectiveTracker_QueueFadeIn!");
 
 	FadeObjectiveTracker.Fading = true;
 	FadeObjectiveTracker:ScheduleTimer(FadeObjectiveTracker_FadeIn, FadeObjectiveTrackerDB.FadeInDelay or 0);
@@ -45,21 +69,20 @@ end
 function FadeObjectiveTracker_QueueFadeOut()
 	if FadeObjectiveTracker.Fading or FadeObjectiveTracker.Faded then return end
 
+	DebugPrint("FadeObjectiveTracker_QueueFadeOut!");
+
 	FadeObjectiveTracker.Fading = true;
 	FadeObjectiveTracker:ScheduleTimer(FadeObjectiveTracker_FadeOut, FadeObjectiveTrackerDB.FadeOutDelay or 0);
 end
 
-function FadeObjectiveTracker_IsInstancePvP()
-	local inInstance, instanceType = IsInInstance();
-
-	return inInstance and instanceType == "pvp" or instanceType == "arena";
-end
 
 ------------------------------------------------------------------------------------------------------
 -- Main: Internal Event Handlers
 ------------------------------------------------------------------------------------------------------
 function FadeObjectiveTracker:ENCOUNTER_START(encounterID, encounterName, difficultyID, groupSize)
 	FadeObjectiveTracker.InEncounter = true;
+
+	DebugPrint("ENCOUNTER_START!");
 
 	if not FadeObjectiveTracker.HiddenForPvP and not FadeObjectiveTrackerDB.HideOnCombat or false then
 		FadeObjectiveTracker_FadeOut();
@@ -69,6 +92,8 @@ end
 function FadeObjectiveTracker:ENCOUNTER_END(encounterID, encounterName, difficultyID, groupSize, success)
 	FadeObjectiveTracker.InEncounter = nil;
 
+	DebugPrint("ENCOUNTER_END!");
+
 	if not FadeObjectiveTracker.HiddenForPvP and not FadeObjectiveTracker.InCombat then
 		FadeObjectiveTracker_QueueFadeIn();
 	end
@@ -76,6 +101,8 @@ end
 
 function FadeObjectiveTracker:PLAYER_REGEN_DISABLED()
 	FadeObjectiveTracker.InCombat = true;
+
+	DebugPrint("PLAYER_REGEN_DISABLED!");
 
 	if not FadeObjectiveTracker.HiddenForPvP and FadeObjectiveTrackerDB.HideOnCombat or false then
 		FadeObjectiveTracker_FadeOut();
@@ -85,62 +112,102 @@ end
 function FadeObjectiveTracker:PLAYER_REGEN_ENABLED()
 	FadeObjectiveTracker.InCombat = nil;
 
+	DebugPrint("PLAYER_REGEN_ENABLED!");
+
 	if not FadeObjectiveTracker.HiddenForPvP and not FadeObjectiveTracker.InEncounter then
 		FadeObjectiveTracker_QueueFadeIn();
 	end
 end
 
 function FadeObjectiveTracker:PLAYER_ENTERING_WORLD()
+	FadeObjectiveTracker.HiddenForPvP = nil;
 	FadeObjectiveTracker.InEncounter = nil;
 	FadeObjectiveTracker.InCombat = nil;
 
-	FadeObjectiveTracker.InsidePvP = FadeObjectiveTracker_IsInstancePvP();
+	FadeObjectiveTracker.InsidePvP = IsInstancePvP();
 	FadeObjectiveTracker.IsResting = IsResting();
+
+	DebugPrint("PLAYER_ENTERING_WORLD!\nInsidePvP: " .. tostring(FadeObjectiveTracker.InsidePvP) .. "\nIsResting: " .. tostring(FadeObjectiveTracker.IsResting));
 
 	if FadeObjectiveTracker.InsidePvP and FadeObjectiveTrackerDB.HideInsidePvP or false then
 		FadeObjectiveTracker.HiddenForPvP = true;
 		FadeObjectiveTracker_FadeOut();
 	else
-		FadeObjectiveTracker.HiddenForPvP = nil;
 		FadeObjectiveTracker_FadeIn();
 	end
 
-	if FadeObjectiveTracker.IsResting and FadeObjectiveTrackerDB.HideInsideResting or false then
-		ObjectiveTracker_Collapse();
+	if not FadeObjectiveTracker.HiddenForPvP and not IsObjectiveTracker() then
+		if FadeObjectiveTracker.IsResting and FadeObjectiveTrackerDB.HideInsideResting or false then
+			FadeObjectiveTracker_FadeOut();
+		else
+			FadeObjectiveTracker_FadeIn();
+		end
 	else
-		ObjectiveTracker_Expand();
-		ObjectiveTracker_Update();
+		if FadeObjectiveTracker.IsResting and FadeObjectiveTrackerDB.HideInsideResting or false then
+			ObjectiveTracker_Collapse();
+		else
+			ObjectiveTracker_Expand();
+			ObjectiveTracker_Update();
+		end
 	end
 end
 
 function FadeObjectiveTracker:PLAYER_UPDATE_RESTING()
 	FadeObjectiveTracker.IsResting = IsResting();
 
-	if FadeObjectiveTracker.IsResting and FadeObjectiveTrackerDB.HideInsideResting or false then
-		ObjectiveTracker_Collapse();
+	DebugPrint("PLAYER_UPDATE_RESTING!\nIsResting: " .. tostring(FadeObjectiveTracker.IsResting));
+
+	if not FadeObjectiveTracker.HiddenForPvP and not IsObjectiveTracker() then
+		if FadeObjectiveTracker.IsResting and FadeObjectiveTrackerDB.HideInsideResting or false then
+			FadeObjectiveTracker_FadeOut();
+		else
+			FadeObjectiveTracker_FadeIn();
+		end
 	else
-		ObjectiveTracker_Expand();
-		ObjectiveTracker_Update();
+		if FadeObjectiveTracker.IsResting and FadeObjectiveTrackerDB.HideInsideResting or false then
+			ObjectiveTracker_Collapse();
+		else
+			ObjectiveTracker_Expand();
+			ObjectiveTracker_Update();
+		end
 	end
 end
 
 ------------------------------------------------------------------------------------------------------
 -- Main: Overwrite Original Functions
 ------------------------------------------------------------------------------------------------------
-local Original_ObjectiveTracker_Expand = Original_ObjectiveTracker_Expand or ObjectiveTracker_Expand;
+if IsObjectiveTracker() then
+	local Original_ObjectiveTracker_Update = Original_ObjectiveTracker_Update or ObjectiveTracker_Update;
 
-function ObjectiveTracker_Expand()
-	if FadeObjectiveTracker.BlockScenarioExpand then FadeObjectiveTracker.BlockScenarioExpand = nil return end
+	function ObjectiveTracker_Update(reason, id)
+		if FadeObjectiveTracker.Faded then return end
 
-	Original_ObjectiveTracker_Expand();
-end
+		Original_ObjectiveTracker_Update(reason, id);
+	end
 
-local Original_ScenarioTimer_Start = Original_ScenarioTimer_Start or ScenarioTimer_Start;
+	local Original_ObjectiveTracker_Expand = Original_ObjectiveTracker_Expand or ObjectiveTracker_Expand;
 
-function ScenarioTimer_Start(block, updateFunc)
-	if FadeObjectiveTrackerDB.BlockScenarioExpand or false then FadeObjectiveTracker.BlockScenarioExpand = true end
+	function ObjectiveTracker_Expand()
+		if FadeObjectiveTracker.BlockScenarioExpand then FadeObjectiveTracker.BlockScenarioExpand = nil return end
 
-	Original_ScenarioTimer_Start(block, updateFunc);
+		Original_ObjectiveTracker_Expand();
+	end
+
+	local Original_ScenarioTimer_Start = Original_ScenarioTimer_Start or ScenarioTimer_Start;
+
+	function ScenarioTimer_Start(block, updateFunc)
+		if FadeObjectiveTrackerDB.BlockScenarioExpand or false then FadeObjectiveTracker.BlockScenarioExpand = true end
+
+		Original_ScenarioTimer_Start(block, updateFunc);
+	end
+else
+	local Original_QuestWatch_Update = Original_QuestWatch_Update or QuestWatch_Update;
+
+	function QuestWatch_Update()
+		if FadeObjectiveTracker.Faded then return end
+
+		Original_QuestWatch_Update();
+	end
 end
 
 ------------------------------------------------------------------------------------------------------
@@ -211,15 +278,16 @@ local FadeObjectiveTrackerOptions = {
 		ExtraGroup = {
 			order = 3,
 			type  = "group",
-			name  = "Extra tweaks",
+			name  = "Extras",
 			args  = {
 				BlockScenarioExpand = {
-					order = 1,
-					type  = "toggle",
-					name  = "Block scenario expand",
-					desc  = "Blocks a scenario (Challenge Mode / Proving Grounds) from expanding the tracker.",
-					set   = function(info, value) FadeObjectiveTrackerDB.BlockScenarioExpand = value end,
-					get   = function(info) return FadeObjectiveTrackerDB.BlockScenarioExpand or false end,
+					order  = 1,
+					type   = "toggle",
+					name   = "Block scenario expand",
+					desc   = "Blocks a scenario (Challenge Mode / Proving Grounds) from expanding the tracker.",
+					set    = function(info, value) FadeObjectiveTrackerDB.BlockScenarioExpand = value end,
+					get    = function(info) return FadeObjectiveTrackerDB.BlockScenarioExpand or false end,
+					hidden = not IsObjectiveTracker(),
 				},
 				HideOnCombat = {
 					order = 2,
