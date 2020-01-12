@@ -75,7 +75,6 @@ function FadeObjectiveTracker_QueueFadeOut()
 	FadeObjectiveTracker:ScheduleTimer(FadeObjectiveTracker_FadeOut, FadeObjectiveTrackerDB.FadeOutDelay or 0);
 end
 
-
 ------------------------------------------------------------------------------------------------------
 -- Main: Internal Event Handlers
 ------------------------------------------------------------------------------------------------------
