@@ -78,7 +78,7 @@ end
 ------------------------------------------------------------------------------------------------------
 -- Main: Internal Event Handlers
 ------------------------------------------------------------------------------------------------------
-function FadeObjectiveTracker:ENCOUNTER_START(encounterID, encounterName, difficultyID, groupSize)
+function FadeObjectiveTracker:ENCOUNTER_START(_, encounterID, encounterName, difficultyID, groupSize)
 	FadeObjectiveTracker.InEncounter = true;
 
 	DebugPrint("ENCOUNTER_START!");
@@ -88,7 +88,7 @@ function FadeObjectiveTracker:ENCOUNTER_START(encounterID, encounterName, diffic
 	end
 end
 
-function FadeObjectiveTracker:ENCOUNTER_END(encounterID, encounterName, difficultyID, groupSize, success)
+function FadeObjectiveTracker:ENCOUNTER_END(_, encounterID, encounterName, difficultyID, groupSize, success)
 	FadeObjectiveTracker.InEncounter = nil;
 
 	DebugPrint("ENCOUNTER_END!");
