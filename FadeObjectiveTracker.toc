@@ -1,4 +1,9 @@
+#@retail@
 ## Interface: 80300
+#@end-retail@
+#@non-retail@
+# ## Interface: 11303
+#@end-non-retail@
 ## Author: zaCade
 ## Title: FadeObjectiveTracker
 ## Notes: Automatically fade out the objective tracker on boss encounters.
