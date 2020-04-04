@@ -36,8 +36,9 @@ function FadeObjectiveTracker_FadeIn()
 
 	FadeObjectiveTracker.Faded = nil;
 	FadeObjectiveTracker.Fading = nil;
+	FadeObjectiveTracker.Visible = nil;
 
-	UIFrameFadeIn(GetTrackerFrame(), FadeObjectiveTrackerDB.FadeInSpeed or 1, 0, 1);
+	UIFrameFadeIn(GetTrackerFrame(), FadeObjectiveTrackerDB.FadeInSpeed or 1, FadeObjectiveTrackerDB.FadeValue or 0, 1);
 
 	if IsObjectiveTracker() then
 		ObjectiveTracker_Update();
@@ -53,8 +54,9 @@ function FadeObjectiveTracker_FadeOut()
 
 	FadeObjectiveTracker.Faded = true;
 	FadeObjectiveTracker.Fading = nil;
+	FadeObjectiveTracker.Visible = FadeObjectiveTrackerDB.FadeValue ~= 0;
 
-	UIFrameFadeOut(GetTrackerFrame(), FadeObjectiveTrackerDB.FadeOutSpeed or 1, 1, 0);
+	UIFrameFadeOut(GetTrackerFrame(), FadeObjectiveTrackerDB.FadeOutSpeed or 1, 1, FadeObjectiveTrackerDB.FadeValue or 0);
 end
 
 function FadeObjectiveTracker_QueueFadeIn()
@@ -179,7 +181,7 @@ if IsObjectiveTracker() then
 	local Original_ObjectiveTracker_Update = Original_ObjectiveTracker_Update or ObjectiveTracker_Update;
 
 	function ObjectiveTracker_Update(reason, id)
-		if FadeObjectiveTracker.Faded then return end
+		if FadeObjectiveTracker.Faded and not FadeObjectiveTracker.Visible then return end
 
 		Original_ObjectiveTracker_Update(reason, id);
 	end
@@ -203,7 +205,7 @@ else
 	local Original_QuestWatch_Update = Original_QuestWatch_Update or QuestWatch_Update;
 
 	function QuestWatch_Update()
-		if FadeObjectiveTracker.Faded then return end
+		if FadeObjectiveTracker.Faded and not FadeObjectiveTracker.Visible then return end
 
 		Original_QuestWatch_Update();
 	end
@@ -219,10 +221,26 @@ local FadeObjectiveTrackerOptions = {
 		FadeInGroup = {
 			order = 1,
 			type  = "group",
-			name  = "Fade in settings",
+			name  = "Fade settings",
 			args  = {
-				FadeInSpeed = {
+				FadeValue = {
 					order = 1,
+					type  = "range",
+					name  = "Fade percentage",
+					desc  = "How much alpha the tracker should fade to.",
+					step  = 0.05,
+					min   = 0,
+					max   = 1,
+					set   = function(info, value) FadeObjectiveTrackerDB.FadeValue = value end,
+					get   = function(info) return FadeObjectiveTrackerDB.FadeValue or 0 end,
+				},
+				FadeInHeader = {
+					order  = 2,
+					type   = "header",
+					name   = "Fade in settings",
+				},
+				FadeInSpeed = {
+					order = 3,
 					type  = "range",
 					name  = "Fade in speed",
 					desc  = "How long it takes for the tracker to fade in.",
@@ -233,7 +251,7 @@ local FadeObjectiveTrackerOptions = {
 					get   = function(info) return FadeObjectiveTrackerDB.FadeInSpeed or 1 end,
 				},
 				FadeInDelay = {
-					order = 2,
+					order = 4,
 					type  = "range",
 					name  = "Fade in delay",
 					desc  = "How long it takes before the tracker actually fades in.",
@@ -243,15 +261,13 @@ local FadeObjectiveTrackerOptions = {
 					set   = function(info, value) FadeObjectiveTrackerDB.FadeInDelay = value end,
 					get   = function(info) return FadeObjectiveTrackerDB.FadeInDelay or 0 end,
 				},
-			},
-		},
-		FadeOutGroup = {
-			order = 2,
-			type  = "group",
-			name  = "Fade out settings",
-			args  = {
+				FadeOutHeader = {
+					order  = 5,
+					type   = "header",
+					name   = "Fade out settings",
+				},
 				FadeOutSpeed = {
-					order = 1,
+					order = 6,
 					type  = "range",
 					name  = "Fade out speed",
 					desc  = "How long it takes for the tracker to fade out.",
@@ -262,7 +278,7 @@ local FadeObjectiveTrackerOptions = {
 					get   = function(info) return FadeObjectiveTrackerDB.FadeOutSpeed or 1 end,
 				},
 				FadeOutDelay = {
-					order = 2,
+					order = 7,
 					type  = "range",
 					name  = "Fade out delay",
 					desc  = "How long it takes before the tracker actually fades out.",
@@ -322,6 +338,8 @@ local FadeObjectiveTrackerOptions = {
 ------------------------------------------------------------------------------------------------------
 function FadeObjectiveTracker:OnInitialize()
 	FadeObjectiveTrackerDB = FadeObjectiveTrackerDB or {};
+
+	FadeObjectiveTrackerDB.FadeValue = FadeObjectiveTrackerDB.FadeValue or 0;
 
 	FadeObjectiveTrackerDB.FadeInSpeed = FadeObjectiveTrackerDB.FadeInSpeed or 1;
 	FadeObjectiveTrackerDB.FadeInDelay = FadeObjectiveTrackerDB.FadeInDelay or 0;
