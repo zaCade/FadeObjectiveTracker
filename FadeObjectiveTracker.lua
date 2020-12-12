@@ -52,6 +52,8 @@ function FadeObjectiveTracker_FadeOut()
 
 	DebugPrint("FadeObjectiveTracker_FadeOut!");
 
+	if FadeObjectiveTrackerDB.OnlyInGroup and IsInGroup() then return end
+
 	FadeObjectiveTracker.Faded = true;
 	FadeObjectiveTracker.Fading = nil;
 	FadeObjectiveTracker.Visible = FadeObjectiveTrackerDB.FadeValue ~= 0;
@@ -72,6 +74,8 @@ function FadeObjectiveTracker_QueueFadeOut()
 	if FadeObjectiveTracker.Fading or FadeObjectiveTracker.Faded then return end
 
 	DebugPrint("FadeObjectiveTracker_QueueFadeOut!");
+
+	if FadeObjectiveTrackerDB.OnlyInGroup and IsInGroup() then return end
 
 	FadeObjectiveTracker.Fading = true;
 	FadeObjectiveTracker:ScheduleTimer(FadeObjectiveTracker_FadeOut, FadeObjectiveTrackerDB.FadeOutDelay or 0);
@@ -234,13 +238,21 @@ local FadeObjectiveTrackerOptions = {
 					set   = function(info, value) FadeObjectiveTrackerDB.FadeValue = value end,
 					get   = function(info) return FadeObjectiveTrackerDB.FadeValue or 0 end,
 				},
+				OnlyInGroup = {
+					order = 2,
+					type  = "toggle",
+					name  = "Only in group",
+					desc  = "Only fade the tracker while inside a group.",
+					set   = function(info, value) FadeObjectiveTrackerDB.OnlyInGroup = value end,
+					get   = function(info) return FadeObjectiveTrackerDB.OnlyInGroup or false end,
+				},
 				FadeInHeader = {
-					order  = 2,
+					order  = 3,
 					type   = "header",
 					name   = "Fade in settings",
 				},
 				FadeInSpeed = {
-					order = 3,
+					order = 4,
 					type  = "range",
 					name  = "Fade in speed",
 					desc  = "How long it takes for the tracker to fade in.",
@@ -251,7 +263,7 @@ local FadeObjectiveTrackerOptions = {
 					get   = function(info) return FadeObjectiveTrackerDB.FadeInSpeed or 1 end,
 				},
 				FadeInDelay = {
-					order = 4,
+					order = 5,
 					type  = "range",
 					name  = "Fade in delay",
 					desc  = "How long it takes before the tracker actually fades in.",
@@ -262,12 +274,12 @@ local FadeObjectiveTrackerOptions = {
 					get   = function(info) return FadeObjectiveTrackerDB.FadeInDelay or 0 end,
 				},
 				FadeOutHeader = {
-					order  = 5,
+					order  = 6,
 					type   = "header",
 					name   = "Fade out settings",
 				},
 				FadeOutSpeed = {
-					order = 6,
+					order = 7,
 					type  = "range",
 					name  = "Fade out speed",
 					desc  = "How long it takes for the tracker to fade out.",
@@ -278,7 +290,7 @@ local FadeObjectiveTrackerOptions = {
 					get   = function(info) return FadeObjectiveTrackerDB.FadeOutSpeed or 1 end,
 				},
 				FadeOutDelay = {
-					order = 7,
+					order = 8,
 					type  = "range",
 					name  = "Fade out delay",
 					desc  = "How long it takes before the tracker actually fades out.",
@@ -339,7 +351,8 @@ local FadeObjectiveTrackerOptions = {
 function FadeObjectiveTracker:OnInitialize()
 	FadeObjectiveTrackerDB = FadeObjectiveTrackerDB or {};
 
-	FadeObjectiveTrackerDB.FadeValue = FadeObjectiveTrackerDB.FadeValue or 0;
+	FadeObjectiveTrackerDB.FadeValue   = FadeObjectiveTrackerDB.FadeValue   or 0;
+	FadeObjectiveTrackerDB.OnlyInGroup = FadeObjectiveTrackerDB.OnlyInGroup or false;
 
 	FadeObjectiveTrackerDB.FadeInSpeed = FadeObjectiveTrackerDB.FadeInSpeed or 1;
 	FadeObjectiveTrackerDB.FadeInDelay = FadeObjectiveTrackerDB.FadeInDelay or 0;
