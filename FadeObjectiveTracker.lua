@@ -52,7 +52,7 @@ function FadeObjectiveTracker_FadeOut()
 
 	DebugPrint("FadeObjectiveTracker_FadeOut!");
 
-	if FadeObjectiveTrackerDB.OnlyInGroup and IsInGroup() then return end
+	if FadeObjectiveTrackerDB.OnlyInGroup and not IsInGroup() then return end
 
 	FadeObjectiveTracker.Faded = true;
 	FadeObjectiveTracker.Fading = nil;
@@ -75,7 +75,7 @@ function FadeObjectiveTracker_QueueFadeOut()
 
 	DebugPrint("FadeObjectiveTracker_QueueFadeOut!");
 
-	if FadeObjectiveTrackerDB.OnlyInGroup and IsInGroup() then return end
+	if FadeObjectiveTrackerDB.OnlyInGroup and not IsInGroup() then return end
 
 	FadeObjectiveTracker.Fading = true;
 	FadeObjectiveTracker:ScheduleTimer(FadeObjectiveTracker_FadeOut, FadeObjectiveTrackerDB.FadeOutDelay or 0);
