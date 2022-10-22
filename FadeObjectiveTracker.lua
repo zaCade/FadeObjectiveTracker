@@ -13,11 +13,11 @@ end
 -- Main: Helper Functions
 ------------------------------------------------------------------------------------------------------
 local function GetTrackerFrame()
-	return ObjectiveTrackerFrame or QuestWatchFrame;
+	return QuestWatchFrame or WatchFrame or ObjectiveTrackerFrame;
 end
 
-local function IsObjectiveTracker()
-	return ObjectiveTrackerFrame ~= nil or false;
+local function IsExistingFrame(frame)
+	return frame ~= nil or false;
 end
 
 local function IsInstancePvP()
@@ -40,10 +40,19 @@ function FadeObjectiveTracker_FadeIn()
 
 	UIFrameFadeIn(GetTrackerFrame(), FadeObjectiveTrackerDB.FadeInSpeed or 1, FadeObjectiveTrackerDB.FadeValue or 0, 1);
 
-	if IsObjectiveTracker() then
-		ObjectiveTracker_Update();
-	else
+	-- Classic & TBC
+	if QuestWatch_Update then
 		QuestWatch_Update();
+	end
+
+	-- Wrath
+	if WatchFrame_Update then
+		WatchFrame_Update();
+	end
+
+	-- Retail
+	if ObjectiveTracker_Update then
+		ObjectiveTracker_Update();
 	end
 end
 
@@ -141,7 +150,7 @@ function FadeObjectiveTracker:PLAYER_ENTERING_WORLD()
 		FadeObjectiveTracker_FadeIn();
 	end
 
-	if not FadeObjectiveTracker.HiddenForPvP and not IsObjectiveTracker() then
+	if not FadeObjectiveTracker.HiddenForPvP and not IsExistingFrame(ObjectiveTrackerFrame) then
 		if FadeObjectiveTracker.IsResting and FadeObjectiveTrackerDB.HideInsideResting or false then
 			FadeObjectiveTracker_FadeOut();
 		else
@@ -162,7 +171,7 @@ function FadeObjectiveTracker:PLAYER_UPDATE_RESTING()
 
 	DebugPrint("PLAYER_UPDATE_RESTING!\nIsResting: " .. tostring(FadeObjectiveTracker.IsResting));
 
-	if not FadeObjectiveTracker.HiddenForPvP and not IsObjectiveTracker() then
+	if not FadeObjectiveTracker.HiddenForPvP and not IsExistingFrame(ObjectiveTrackerFrame) then
 		if FadeObjectiveTracker.IsResting and FadeObjectiveTrackerDB.HideInsideResting or false then
 			FadeObjectiveTracker_FadeOut();
 		else
@@ -181,7 +190,27 @@ end
 ------------------------------------------------------------------------------------------------------
 -- Main: Overwrite Original Functions
 ------------------------------------------------------------------------------------------------------
-if IsObjectiveTracker() then
+if QuestWatch_Update then
+	local Original_QuestWatch_Update = Original_QuestWatch_Update or QuestWatch_Update;
+
+	function QuestWatch_Update()
+		if FadeObjectiveTracker.Faded and not FadeObjectiveTracker.Visible then return end
+
+		Original_QuestWatch_Update();
+	end
+end
+
+if WatchFrame_Update then
+	local Original_WatchFrame_Update = Original_WatchFrame_Update or WatchFrame_Update;
+
+	function WatchFrame_Update()
+		if FadeObjectiveTracker.Faded and not FadeObjectiveTracker.Visible then return end
+
+		Original_WatchFrame_Update();
+	end
+end
+
+if ObjectiveTracker_Update then
 	local Original_ObjectiveTracker_Update = Original_ObjectiveTracker_Update or ObjectiveTracker_Update;
 
 	function ObjectiveTracker_Update(reason, id)
@@ -189,7 +218,9 @@ if IsObjectiveTracker() then
 
 		Original_ObjectiveTracker_Update(reason, id);
 	end
+end
 
+if ObjectiveTracker_Expand then
 	local Original_ObjectiveTracker_Expand = Original_ObjectiveTracker_Expand or ObjectiveTracker_Expand;
 
 	function ObjectiveTracker_Expand()
@@ -197,21 +228,15 @@ if IsObjectiveTracker() then
 
 		Original_ObjectiveTracker_Expand();
 	end
+end
 
+if ScenarioTimer_Start then
 	local Original_ScenarioTimer_Start = Original_ScenarioTimer_Start or ScenarioTimer_Start;
 
 	function ScenarioTimer_Start(block, updateFunc)
 		if FadeObjectiveTrackerDB.BlockScenarioExpand or false then FadeObjectiveTracker.BlockScenarioExpand = true end
 
 		Original_ScenarioTimer_Start(block, updateFunc);
-	end
-else
-	local Original_QuestWatch_Update = Original_QuestWatch_Update or QuestWatch_Update;
-
-	function QuestWatch_Update()
-		if FadeObjectiveTracker.Faded and not FadeObjectiveTracker.Visible then return end
-
-		Original_QuestWatch_Update();
 	end
 end
 
@@ -314,7 +339,7 @@ local FadeObjectiveTrackerOptions = {
 					desc   = "Blocks a scenario (Challenge Mode / Proving Grounds) from expanding the tracker.",
 					set    = function(info, value) FadeObjectiveTrackerDB.BlockScenarioExpand = value end,
 					get    = function(info) return FadeObjectiveTrackerDB.BlockScenarioExpand or false end,
-					hidden = not IsObjectiveTracker(),
+					hidden = not IsExistingFrame(ObjectiveTrackerFrame),
 				},
 				HideOnCombat = {
 					order = 2,
