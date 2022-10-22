@@ -2,6 +2,7 @@
 ## Interface-Retail: @toc-version-retail@
 ## Interface-Classic: @toc-version-classic@
 ## Interface-BCC: @toc-version-bcc@
+## Interface-Wrath: @toc-version-wrath@
 ## Author: zaCade
 ## Title: FadeObjectiveTracker
 ## Notes: Automatically fade out the objective tracker on boss encounters.
